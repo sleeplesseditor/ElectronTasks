@@ -1,33 +1,22 @@
 const path = require('path');
 const electron = require('electron');
+const TimerTray = require('./app/TimerTray');
+const MainWindow = require('./app/MainWindow');
 
-const { app, BrowserWindow, Tray } = electron;
+const { app, ipcMain } = electron;
 
 let mainWindow;
 let tray;
 
 app.on('ready', () => {
-    mainWindow = new BrowserWindow({
-        webPreferences: {
-            nodeIntegration: true
-        },
-        height: 500,
-        width: 300,
-        frame: false,
-        resizable: false,
-        show: false
-    });
-    mainWindow.loadURL(`file://${__dirname}/src/index.html`);
+  app.dock.hide();
+  mainWindow = new MainWindow(`file://${__dirname}/src/index.html`);
 
-    const iconName = process.platform === 'win32' ? 'windows-icon.png' : 'iconTemplate.png';
-    const iconPath = path.join(__dirname, `./src/assets/${iconName}`);
+  const iconName = process.platform === 'win32' ? 'windows-icon.png' : 'iconTemplate.png';
+  const iconPath = path.join(__dirname, `./src/assets/${iconName}`);
+  tray = new TimerTray(iconPath, mainWindow);
+});
 
-    tray = new Tray(iconPath);
-    tray.on('click', () => {
-        if(mainWindow.isVisible()) {
-            mainWindow.hide();
-        } else {
-            mainWindow.show();
-        }
-    });
+ipcMain.on('update-timer', (event, timeLeft) => {
+  tray.setTitle(timeLeft);
 });
